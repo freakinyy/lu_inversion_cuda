@@ -238,7 +238,7 @@ void test_invert_onetypeall(const std::vector<int>& v_n, const std::vector<int>&
 
 int main()
 {
-	size_t testnum = 10;
+	size_t testnum = 100;
 
 	std::cout << "Test: Time comsuming of LU decomposition matrix inversion with CUDA." << std::endl << std::endl;
 
