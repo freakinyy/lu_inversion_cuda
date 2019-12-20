@@ -307,22 +307,6 @@ int main()
 	LARGE_INTEGER pf;
 	QueryPerformanceFrequency(&pf);
 
-	//std::vector<TestItem> v_ti;
-	//v_ti.push_back(TestItem(16, 1, "double", 32));
-	//v_ti.push_back(TestItem(32, 1, "double", 32));
-	//v_ti.push_back(TestItem(64, 1, "double", 32));
-	//v_ti.push_back(TestItem(128, 1, "double", 32));
-	//v_ti.push_back(TestItem(256, 1, "double", 32));
-	//v_ti.push_back(TestItem(512, 1, "double", 32));
-	//v_ti.push_back(TestItem(1024, 1, "double", 32));
-
-	//v_ti.push_back(TestItem(16, 1, "float", 32));
-	//v_ti.push_back(TestItem(32, 1, "float", 32));
-	//v_ti.push_back(TestItem(64, 1, "float", 32));
-	//v_ti.push_back(TestItem(128, 1, "float", 32));
-	//v_ti.push_back(TestItem(256, 1, "float", 32));
-	//v_ti.push_back(TestItem(512, 1, "float", 32));
-	//v_ti.push_back(TestItem(1024, 1, "float", 32));
 	std::vector<TestItem> v_ti = LoadTestConfig("TestConfig.ini");
 
 	for (const auto& tmp_ti : v_ti)
