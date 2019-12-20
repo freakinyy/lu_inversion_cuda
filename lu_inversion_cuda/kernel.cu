@@ -279,7 +279,7 @@ void test_invert_onetypeall(const int n, const int mybatch, const std::string& t
 		std::cout << "Unexpected Type: " << type << std::endl;
 		return;
 	}
-	std::cout << "n = " << n << ", mybatch = " << mybatch << ", Type=" << type << ", TestNum=" << testnum << ", time = " << (pc_diff_inner.QuadPart) / testnum * 1000000 / pf.QuadPart << " microsecond." << std::endl;
+	std::cout << "n = " << n << ", mybatch = " << mybatch << ", Type = " << type << ", TestNum = " << testnum << ", time = " << (pc_diff_inner.QuadPart) / testnum * 1000000 / pf.QuadPart << " microsecond." << std::endl;
 }
 
 int main()
