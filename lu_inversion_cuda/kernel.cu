@@ -43,6 +43,43 @@
 
 #define PREC_SAVE 10
 
+class TestItem
+{
+public:
+	TestItem(int n, int mybatch = 1, std::string type = "double", size_t testnum = 100) :n(n), mybatch(mybatch), type(type), testnum(testnum) {};
+	~TestItem() {};
+	int n;
+	int mybatch;
+	std::string type;
+	size_t testnum;
+};
+
+const std::vector<TestItem> LoadTestConfig(const std::string& fname)
+{
+	std::vector<TestItem> v_ti;
+	int n;
+	int mybatch;
+	std::string type;
+	size_t testnum;
+
+	std::ifstream ifs;
+	ifs.open(fname);
+	if (!ifs.is_open())
+	{
+		std::cout << "Fail to open file: \"" << fname << "\"" << std::endl;
+		return v_ti;
+	}
+	while (!ifs.eof())
+	{
+		ifs >> n;
+		ifs >> mybatch;
+		ifs >> type;
+		ifs >> testnum;
+		v_ti.push_back(TestItem(n, mybatch, type, testnum));
+	}
+	return v_ti;
+}
+
 template <class T>
 void write_1D(const std::string fname, T* ptr, size_t sz0)
 {
@@ -195,7 +232,7 @@ void invert(T** src, T** dst, int n, int batchSize, LARGE_INTEGER& pc_diff_inner
 }
 
 template <class T>
-void test_invert(const int n, const int mybatch, LARGE_INTEGER& pc_diff_inner, T null, const size_t testnum)
+void test_invert(const int n, const int mybatch, T null, LARGE_INTEGER& pc_diff_inner)
 {
 	T** results = (T**)malloc(mybatch * sizeof(T*));
 	for (auto i = 0; i != mybatch; ++i)
@@ -209,8 +246,7 @@ void test_invert(const int n, const int mybatch, LARGE_INTEGER& pc_diff_inner, T
 	for (auto i = 0; i != mybatch; ++i)
 		setHankelMatrix(inputs[i], n);
 
-	for (auto i = 0; i!=testnum; ++i)
-		invert(inputs, results, n, mybatch, pc_diff_inner);
+	invert(inputs, results, n, mybatch, pc_diff_inner);
 
 	//write_1D("iA.txt", results[0], n * n);
 	for (auto i = 0; i != mybatch; ++i)
@@ -218,28 +254,36 @@ void test_invert(const int n, const int mybatch, LARGE_INTEGER& pc_diff_inner, T
 		free(inputs[i]);
 		free(results[i]);
 	}
+	free(inputs);
+	free(results);
 }
 
-template <class T>
-void test_invert_onetypeall(const std::vector<int>& v_n, const std::vector<int>& v_mybatch, std::vector<std::vector<LARGE_INTEGER>>& v_pc_diff_inner, LARGE_INTEGER& pf, T t_null, const size_t testnum)
+void test_invert_onetypeall(const int n, const int mybatch, const std::string& type, const size_t testnum, const LARGE_INTEGER& pf)
 {
-	for (auto& tmp0 : v_pc_diff_inner)
-		for (auto& tmp1 : tmp0)
-			ZeroMemory(&tmp1, sizeof(LARGE_INTEGER));
-	for (auto i = 0; i != v_n.size(); ++i)
-		for (auto j = 0; j != v_mybatch.size(); ++j)
-			test_invert(v_n[i], v_mybatch[j], v_pc_diff_inner[i][j], t_null, testnum);
-	std::cout << "Type=" << typeid(t_null).name() << std::endl;
-	for (auto i = 0; i != v_n.size(); ++i)
-		for (auto j = 0; j != v_mybatch.size(); ++j)
-			std::cout << "n = " << v_n[i] << ", mybatch = " << v_mybatch[j] << ", time = " << (v_pc_diff_inner[i][j].QuadPart) / testnum * 1000000 / pf.QuadPart << " microsecond." << std::endl;
-	std::cout << std::endl;
+	double null_d = 0;
+	float null_f = 0;
+	LARGE_INTEGER pc_diff_inner;
+	ZeroMemory(&pc_diff_inner, sizeof(LARGE_INTEGER));
+	if (type == "double")
+	{
+		for (auto i = 0; i != testnum; ++i)
+			test_invert(n, mybatch, null_d, pc_diff_inner);
+	}
+	else if (type == "float")
+	{
+		for (auto i = 0; i != testnum; ++i)
+			test_invert(n, mybatch, null_f, pc_diff_inner);
+	}
+	else
+	{
+		std::cout << "Unexpected Type: " << type << std::endl;
+		return;
+	}
+	std::cout << "n = " << n << ", mybatch = " << mybatch << ", Type=" << type << ", TestNum=" << testnum << ", time = " << (pc_diff_inner.QuadPart) / testnum * 1000000 / pf.QuadPart << " microsecond." << std::endl;
 }
 
 int main()
 {
-	size_t testnum = 100;
-
 	std::cout << "Test: Time comsuming of LU decomposition matrix inversion with CUDA." << std::endl << std::endl;
 
 	int nDevices;
@@ -260,30 +304,29 @@ int main()
 			2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6);
 	}
 
-	std::vector<int> v_n;
-	v_n.push_back(16);
-	v_n.push_back(32);
-	v_n.push_back(64);
-	v_n.push_back(128);
-	v_n.push_back(256);
-	v_n.push_back(512);
-	v_n.push_back(1024);
-
-	std::vector<int> v_mybatch;
-	v_mybatch.push_back(1);
-
 	LARGE_INTEGER pf;
 	QueryPerformanceFrequency(&pf);
 
-	std::vector<std::vector<LARGE_INTEGER>> v_pc_diff_inner;
-	v_pc_diff_inner.resize(v_n.size());
-	for (auto& tmp0 : v_pc_diff_inner)
-		tmp0.resize(v_mybatch.size());
+	//std::vector<TestItem> v_ti;
+	//v_ti.push_back(TestItem(16, 1, "double", 32));
+	//v_ti.push_back(TestItem(32, 1, "double", 32));
+	//v_ti.push_back(TestItem(64, 1, "double", 32));
+	//v_ti.push_back(TestItem(128, 1, "double", 32));
+	//v_ti.push_back(TestItem(256, 1, "double", 32));
+	//v_ti.push_back(TestItem(512, 1, "double", 32));
+	//v_ti.push_back(TestItem(1024, 1, "double", 32));
 
-	double null_d = 0;
-	float null_f = 0;
-	test_invert_onetypeall(v_n, v_mybatch, v_pc_diff_inner, pf, null_d, testnum);
-	test_invert_onetypeall(v_n, v_mybatch, v_pc_diff_inner, pf, null_f, testnum);
+	//v_ti.push_back(TestItem(16, 1, "float", 32));
+	//v_ti.push_back(TestItem(32, 1, "float", 32));
+	//v_ti.push_back(TestItem(64, 1, "float", 32));
+	//v_ti.push_back(TestItem(128, 1, "float", 32));
+	//v_ti.push_back(TestItem(256, 1, "float", 32));
+	//v_ti.push_back(TestItem(512, 1, "float", 32));
+	//v_ti.push_back(TestItem(1024, 1, "float", 32));
+	std::vector<TestItem> v_ti = LoadTestConfig("TestConfig.ini");
+
+	for (const auto& tmp_ti : v_ti)
+		test_invert_onetypeall(tmp_ti.n, tmp_ti.mybatch, tmp_ti.type, tmp_ti.testnum, pf);
 
 	return 0;
 }
