@@ -84,6 +84,9 @@
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release|x64'">compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="TestConfig.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 10.2.targets" />
